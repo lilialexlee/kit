@@ -1,2 +1,2 @@
 # kit
-c++ network library
+A C++ Network Library

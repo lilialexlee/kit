@@ -1,0 +1,14 @@
+str test
+
+strs test1
+strs test2
+strs test3
+strs test4
+
+int 0
+
+ints 0
+ints 1
+ints 2
+
+#comment test
