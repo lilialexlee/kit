@@ -3,6 +3,7 @@
  *
  */
 
+#include <signal.h>
 #include "net/server.h"
 
 namespace kit {
@@ -24,6 +25,7 @@ Server::~Server() {
 }
 
 void Server::Start(const std::string& listen_ip, int listen_port) {
+  signal(SIGPIPE, SIG_IGN);
   thread_pool_.Init(max_queue_requests_, proc_thread_num_);
   acceptor_.reset(
       new Acceptor(
