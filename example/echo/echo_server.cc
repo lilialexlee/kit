@@ -20,8 +20,8 @@ int main(int argc, char* argv[]) {
   int proc_thread_num = atoi(argv[2]);
   int queue_max = atoi(argv[3]);
   kit::MessageParserPtr parser(new echo::EchoMessageParser());
-  kit::ServerPtr server(
-      new kit::Server(parser, Proc, proc_thread_num, queue_max));
+  kit::ServerPtr server(new kit::Server());
+  server->Init(parser, Proc, proc_thread_num, queue_max, true);
   server->Start("", listen_port);
   return 0;
 }

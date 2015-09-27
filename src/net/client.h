@@ -6,7 +6,6 @@
 #ifndef SRC_NET_CLIENT_H_
 #define SRC_NET_CLIENT_H_
 
-#include <list>
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/thread/mutex.hpp>
@@ -14,7 +13,7 @@
 #include "net/message.h"
 #include "net/event_loop.h"
 #include "net/connector.h"
-#include "net/connection.h"
+#include "net/client_connection.h"
 
 namespace kit {
 
@@ -36,30 +35,28 @@ class Client : public boost::enable_shared_from_this<Client> {
   Client(EventLoop* loop);
   ~Client();
 
+  void Connect(const std::string& ip, int port, int timeout_ms,
+               const ConnectCallback cb);
+
   void Setup(const MessageParserPtr& parser,
              const MessageReceivedCallback& message_cb,
              const ConnectionExceptionCallback& conn_exception_cb);
-
-  void Connect(const std::string& ip, int port, int timeout_ms,
-               const ConnectCallback cb);
 
   void Send(const MessagePtr& message);
 
   void Close();
 
  private:
-  void OnConnectCompleted(const Status& status,
-                          const ConnectionPtr& connection);
-  void OnMessageReceived(const MessagePtr& message,
-                         const ConnectionPtr& connection);
-  void OnConnectionException(const Status& status,
-                             const ConnectionPtr& connection);
+  void OnConnectFinished(const Status& status,
+                         const ClientConnectionPtr& connection);
+  void OnMessageReceived(const MessagePtr& message);
+  void OnConnectionException(const Status& status);
 
   EventLoop* loop_;
   boost::mutex mutex_;
   State state_;
   ConnectorPtr connector_;
-  ConnectionPtr connection_;
+  ClientConnectionPtr connection_;
   ConnectCallback connect_call_back_;
   MessageParserPtr parser_;
   MessageReceivedCallback message_received_call_back_;

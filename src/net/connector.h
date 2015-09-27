@@ -12,14 +12,14 @@
 #include <boost/function.hpp>
 #include "event_loop.h"
 #include "net/socket.h"
-#include "net/connection.h"
+#include "net/client_connection.h"
 #include "net/status.h"
 
 namespace kit {
 
 class Connector : public boost::enable_shared_from_this<Connector> {
  public:
-  typedef boost::function<void(const Status&, const ConnectionPtr&)> ConnectCallback;
+  typedef boost::function<void(const Status&, const ClientConnectionPtr&)> ConnectCallback;
 
   Connector(EventLoop* loop, const std::string& ip, int port, int timeout_ms,
             const ConnectCallback& cb);
@@ -33,9 +33,9 @@ class Connector : public boost::enable_shared_from_this<Connector> {
   void ProcessError();
 
  private:
-  void StartConnect();
+  void StartInLoop();
 
-  void StopConnect();
+  void StopInLoop();
 
   void OnConnected();
   void OnConnectTimeout();

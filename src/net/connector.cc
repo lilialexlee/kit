@@ -53,12 +53,12 @@ Connector::~Connector() {
 
 void Connector::Start() {
   loop_->RunInLoopThread(
-      boost::bind(&Connector::StartConnect, shared_from_this()));
+      boost::bind(&Connector::StartInLoop, shared_from_this()));
 }
 
 void Connector::Stop() {
   loop_->RunInLoopThread(
-      boost::bind(&Connector::StopConnect, shared_from_this()));
+      boost::bind(&Connector::StopInLoop, shared_from_this()));
 }
 
 void Connector::ProcessWrite() {
@@ -81,7 +81,7 @@ void Connector::ProcessError() {
   OnConnectError(Status(Status::kConnectError, "connect error"));
 }
 
-void Connector::StartConnect() {
+void Connector::StartInLoop() {
   socket_.reset(new Socket());
   socket_->SetNonBlock(true);
   int r = socket_->Connect(ip_, port_);
@@ -98,7 +98,7 @@ void Connector::StartConnect() {
     is_connecting_ = true;
   }
 }
-void Connector::StopConnect() {
+void Connector::StopInLoop() {
   if (is_connecting_) {
     loop_->DeleteFileEvent(socket_->Fd(), kEventWrite);
     socket_.reset();
@@ -107,7 +107,7 @@ void Connector::StopConnect() {
 }
 
 void Connector::OnConnected() {
-  ConnectionPtr connection(new Connection(socket_));
+  ClientConnectionPtr connection(new ClientConnection(socket_));
   if (connection->IsSelfConnect()) {
     LOG_ERROR("connect failed, sock: %d, self connect", socket_->Fd());
     OnConnectError(Status(Status::kConnectError, "self connect"));
@@ -120,14 +120,14 @@ void Connector::OnConnected() {
 
 void Connector::OnConnectTimeout() {
   if (is_connecting_) {
-    StopConnect();
+    StopInLoop();
   }
   OnConnectError(Status(Status::kConnectTimeout, "connect timeout"));
 }
 
 void Connector::OnConnectError(const Status& status) {
   socket_.reset();
-  ConnectionPtr place_holder;
+  ClientConnectionPtr place_holder;
   call_back_(status, place_holder);
 }
 

@@ -28,14 +28,6 @@ Client::~Client() {
   }
 }
 
-void Client::Setup(const MessageParserPtr& parser,
-                   const MessageReceivedCallback& message_cb,
-                   const ConnectionExceptionCallback& conn_exception_cb) {
-  parser_ = parser;
-  message_received_call_back_ = message_cb;
-  connection_exception_call_back_ = conn_exception_cb;
-}
-
 void Client::Connect(const std::string& ip, int port, int timeout_ms,
                      const ConnectCallback cb) {
   boost::mutex::scoped_lock lock(mutex_);
@@ -45,14 +37,18 @@ void Client::Connect(const std::string& ip, int port, int timeout_ms,
   connect_call_back_ = cb;
   connector_.reset(
       new Connector(
-          loop_,
-          ip,
-          port,
-          timeout_ms,
-          boost::bind(&Client::OnConnectCompleted, shared_from_this(), _1,
-                      _2)));
+          loop_, ip, port, timeout_ms,
+          boost::bind(&Client::OnConnectFinished, shared_from_this(), _1, _2)));
   state_ = kConnecting;
   connector_->Start();
+}
+
+void Client::Setup(const MessageParserPtr& parser,
+                   const MessageReceivedCallback& message_cb,
+                   const ConnectionExceptionCallback& conn_exception_cb) {
+  parser_ = parser;
+  message_received_call_back_ = message_cb;
+  connection_exception_call_back_ = conn_exception_cb;
 }
 
 void Client::Send(const MessagePtr& message) {
@@ -72,23 +68,21 @@ void Client::Close() {
     connector_->Stop();
     connector_.reset();
   } else {
-    connection_->Stop();
+    connection_->Close();
     connection_.reset();
   }
 }
 
-void Client::OnConnectCompleted(const Status& status,
-                                const ConnectionPtr& connection) {
+void Client::OnConnectFinished(const Status& status,
+                               const ClientConnectionPtr& connection) {
   boost::mutex::scoped_lock lock(mutex_);
   if (status.Ok()) {
     state_ = kConnected;
     connection_ = connection;
     connection_->Init(
-        loop_,
-        parser_,
-        boost::bind(&Client::OnMessageReceived, shared_from_this(), _1, _2),
-        boost::bind(&Client::OnConnectionException, shared_from_this(), _1,
-                    _2));
+        loop_, parser_,
+        boost::bind(&Client::OnMessageReceived, shared_from_this(), _1),
+        boost::bind(&Client::OnConnectionException, shared_from_this(), _1));
   } else {
     state_ = kDisConnected;
   }
@@ -96,13 +90,11 @@ void Client::OnConnectCompleted(const Status& status,
   connect_call_back_(status);
 }
 
-void Client::OnMessageReceived(const MessagePtr& message,
-                               const ConnectionPtr& connection) {
+void Client::OnMessageReceived(const MessagePtr& message) {
   message_received_call_back_(message);
 }
 
-void Client::OnConnectionException(const Status& status,
-                                   const ConnectionPtr& connection) {
+void Client::OnConnectionException(const Status& status) {
   boost::mutex::scoped_lock lock(mutex_);
   state_ = kDisConnected;
   connection_.reset();

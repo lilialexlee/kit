@@ -64,7 +64,6 @@ int Socket::Close() {
       sock_fd_ = -1;
       return -1;
     } else {
-      LOG_TRACE("close fd: %d.", sock_fd_);
       sock_fd_ = -1;
     }
   }

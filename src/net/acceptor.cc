@@ -38,10 +38,10 @@ class AcceptorCallBack : public FileCallBack {
 
 }
 
-Acceptor::Acceptor(EventLoop* loop, const NewConnectionCallback& cb)
+Acceptor::Acceptor(EventLoop* loop, const NewAcceptedConnectionCallback& cb)
     : loop_(loop),
       listen_socket_(),
-      new_connection_callback_(cb) {
+      new_accepted_connection_call_back_(cb) {
 }
 
 Acceptor::~Acceptor() {
@@ -51,31 +51,15 @@ static const int kListenBackLog = 512;
 
 void Acceptor::Listen(const std::string& ip, int port) {
   loop_->RunInLoopThread(
-      boost::bind(&Acceptor::StartListen, shared_from_this(), ip, port));
+      boost::bind(&Acceptor::ListenInLoop, shared_from_this(), ip, port));
 }
 
 void Acceptor::Stop() {
   loop_->RunInLoopThread(
-      boost::bind(&Acceptor::StopListen, shared_from_this()));
+      boost::bind(&Acceptor::StopInLoop, shared_from_this()));
 }
 
-void Acceptor::ProcessRead() {
-  int sockfd = listen_socket_.Accept();
-  if (sockfd > 0) {
-    SocketPtr socket(new Socket());
-    socket->SetupSocketHandle(sockfd);
-    ConnectionPtr connection(new Connection(socket));
-    new_connection_callback_(connection);
-  }
-}
-
-void Acceptor::ProcessError() {
-  int error = listen_socket_.GetSoError();
-  LOG_ERROR("something wrong with the acceptor, listen sock: %d. error: %d",
-            listen_socket_.Fd(), error);
-}
-
-void Acceptor::StartListen(const std::string& ip, int port) {
+void Acceptor::ListenInLoop(const std::string& ip, int port) {
   if (listen_socket_.CreatSocketHandle() < 0) {
     return;
   }
@@ -93,9 +77,25 @@ void Acceptor::StartListen(const std::string& ip, int port) {
   }
 }
 
-void Acceptor::StopListen() {
+void Acceptor::StopInLoop() {
   loop_->DeleteFileEvent(listen_socket_.Fd(), kEventRead);
   listen_socket_.Close();
+}
+
+void Acceptor::ProcessRead() {
+  int sockfd = listen_socket_.Accept();
+  if (sockfd > 0) {
+    SocketPtr socket(new Socket());
+    socket->SetupSocketHandle(sockfd);
+    ServerConnectionPtr connection(new ServerConnection(socket));
+    new_accepted_connection_call_back_(connection);
+  }
+}
+
+void Acceptor::ProcessError() {
+  int error = listen_socket_.GetSoError();
+  LOG_ERROR("something wrong with the acceptor, listen sock: %d. error: %d",
+            listen_socket_.Fd(), error);
 }
 
 }

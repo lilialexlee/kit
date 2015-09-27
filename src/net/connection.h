@@ -3,79 +3,68 @@
  *
  */
 
-#ifndef SRC_NET_CONNECTION_H_
-#define SRC_NET_CONNECTION_H_
+#ifndef SRC_CONNECTION_H_
+#define SRC_CONNECTION_H_
 
-#include <list>
 #include <queue>
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/function.hpp>
-#include "net/event_loop.h"
 #include "net/socket.h"
 #include "net/buffer.h"
 #include "net/message.h"
-#include "net/status.h"
 
 namespace kit {
 
-class Connection;
-
-typedef boost::shared_ptr<Connection> ConnectionPtr;
-
-class Connection : public boost::enable_shared_from_this<Connection> {
+class Connection {
  public:
-  typedef boost::function<void(const MessagePtr&, const ConnectionPtr&)> MessageReceivedCallback;
-  typedef boost::function<void(const Status&, const ConnectionPtr&)> ExceptionCallback;
-
   explicit Connection(const SocketPtr& socket);
-  ~Connection();
+  virtual ~Connection();
 
   int Fd();
 
+  bool Ok();
+
   bool IsSelfConnect();
 
-  void Init(EventLoop* loop, const MessageParserPtr& parser,
-            const MessageReceivedCallback& message_cb,
-            const ExceptionCallback& excetion_cb);
+  std::string Identifier();
 
-  void Send(const MessagePtr& message);
+  SocketPtr Socket();
 
-  void Stop();
+  int Close();
 
-  std::string GetUniqueIdentifier();
+  void Init(const MessageParserPtr& parser);
 
-  void ProcessRead();
-  void ProcessWrite();
-  void ProcessError();
+  //return the number of bytes actually read
+  int Read();
+
+  //decode error, return -1
+  //message incomplete, return 0
+  //get message success, return 1
+  int RetrieveMessage(MessagePtr& message);
+
+  //return the number of bytes actually write
+  int Write();
+
+  //return the number of bytes to be write
+  int Send(const MessagePtr& message);
+
+  bool WriteBufferEmpty();
 
  private:
-  void ConnectionStart();
-  void ConnectionStop();
-  void EnableLoopWriteEvent();
-  void DisableLoopWriteEvent();
-
-  void AppendMessageAndTrySend(const MessagePtr& message);
-  int WriteOutBuffer();
-  int Send();
-
-  void OnPeerDisconnect();
-  void OnException(const Status status);
-
   SocketPtr socket_;
+
   std::string local_ip_;
   int local_port_;
   std::string peer_ip_;
   int peer_port_;
   std::string identifier_;
+
   Buffer in_;
   Buffer out_;
-  std::queue<MessagePtr> to_be_send_messages_;
-  MessageParserPtr parser_;
+
   MessagePtr received_message_;
-  EventLoop* loop_;
-  MessageReceivedCallback message_received_call_back_;
-  ExceptionCallback exception_call_back_;
+  MessageParserPtr parser_;
 
   Connection(const Connection&);
   void operator=(const Connection&);
@@ -85,4 +74,4 @@ typedef boost::shared_ptr<Connection> ConnectionPtr;
 
 }
 
-#endif /* SRC_NET_CONNECTION_H_ */
+#endif /* SRC_CONNECTION_H_ */
