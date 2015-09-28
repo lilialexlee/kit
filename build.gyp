@@ -139,6 +139,27 @@
         '<(project_path)/example/echo/echo_bench_client.cc',
       ],
     },
+    {
+      'target_name' : 'http_server',
+      'type' : 'executable',
+      'include_dirs':[
+      ],
+      'link_settings': {
+        'libraries' : [
+        ]
+      },
+      'defines' : [],
+      'dependencies' : [
+         'kit',
+      ],
+      'sources' : [
+        '<(project_path)/example/http/mime.cc',
+        '<(project_path)/example/http/request.cc',
+        '<(project_path)/example/http/reply.cc',
+        '<(project_path)/example/http/request_handler.cc',
+        '<(project_path)/example/http/http_server.cc',
+      ],
+    },
   ],
 }
 

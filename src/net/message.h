@@ -18,7 +18,11 @@ class Message {
   virtual ~Message() {
   }
 
+  //decode error, return -1
+  //message incomplete, return 0
+  //get message success, return 1
   virtual int Decode(Buffer *input) = 0;
+
   virtual void Encode(Buffer *output) = 0;
 };
 
@@ -32,7 +36,11 @@ class MessageParser {
   virtual ~MessageParser() {
   }
 
+  //decode error, return -1
+  //message incomplete, return 0
+  //get message success, return 1
   virtual int Decode(Buffer *input, MessagePtr& message) = 0;
+
   virtual void Encode(const MessagePtr& message, Buffer *output) = 0;
 };
 

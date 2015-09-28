@@ -69,6 +69,10 @@ void Buffer::Write(const char* data, int len) {
   MarkWrited(len);
 }
 
+void Buffer::Write(const std::string& data) {
+  Write(data.c_str(), data.size());
+}
+
 void Buffer::Shrink() {
   if (capacity_ < kCritialBufSize) {
     return;

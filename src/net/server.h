@@ -25,7 +25,8 @@ class Server : public boost::enable_shared_from_this<Server> {
 
   void Init(const MessageParserPtr& parser, const MessageProcess& message_proc,
             int proc_thread_num, int max_queue_requests,
-            bool process_request_in_order = true);
+            bool process_request_in_order = true,
+            bool close_connection_after_process = false);
 
   void Start(const std::string& listen_ip, int listen_port);
 
@@ -48,6 +49,7 @@ class Server : public boost::enable_shared_from_this<Server> {
   MessageParserPtr parser_;
   MessageProcess message_proc_;
   bool process_message_in_order_;
+  bool close_connection_after_process_;
   ThreadPool thread_pool_;
   int proc_thread_num_;
   int max_queue_requests_;

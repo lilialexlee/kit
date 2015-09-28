@@ -29,8 +29,8 @@ class ServerConnection : public boost::enable_shared_from_this<ServerConnection>
 
   void Init(EventLoop* loop, const MessageParserPtr& parser,
             const MessageReceivedCallback& message_cb,
-            const ExceptionCallback& excetion_cb,
-            bool process_request_in_order);
+            const ExceptionCallback& excetion_cb, bool process_request_in_order,
+            bool close_connection_after_send);
 
   void Close();
 
@@ -57,9 +57,11 @@ class ServerConnection : public boost::enable_shared_from_this<ServerConnection>
 
   ConnectionPtr connection_;
   EventLoop* loop_;
+  MessagePtr request_;
   MessageReceivedCallback message_received_call_back_;
   ExceptionCallback exception_call_back_;
   bool process_request_in_order_;
+  bool close_connection_after_send_;
   bool is_processing_;
 
   ServerConnection(const ServerConnection&);

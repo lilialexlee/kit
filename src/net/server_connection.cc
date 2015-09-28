@@ -40,9 +40,11 @@ class ServerConnectionCallBack : public FileCallBack {
 ServerConnection::ServerConnection(const SocketPtr& socket)
     : connection_(new Connection(socket)),
       loop_(NULL),
+      request_(),
       message_received_call_back_(),
       exception_call_back_(),
-      process_request_in_order_(false),
+      process_request_in_order_(true),
+      close_connection_after_send_(false),
       is_processing_(false) {
   LOG_INFO("new connection, socket: %d, %s", connection_->Fd(),
            connection_->Identifier().c_str());
@@ -55,12 +57,14 @@ ServerConnection::~ServerConnection() {
 void ServerConnection::Init(EventLoop* loop, const MessageParserPtr& parser,
                             const MessageReceivedCallback& message_cb,
                             const ExceptionCallback& excetion_cb,
-                            bool process_request_in_order) {
+                            bool process_request_in_order,
+                            bool close_connection_after_send) {
   loop_ = loop;
   connection_->Init(parser);
   message_received_call_back_ = message_cb;
   exception_call_back_ = excetion_cb;
   process_request_in_order_ = process_request_in_order;
+  close_connection_after_send_ = close_connection_after_send;
   loop_->RunInLoopThread(
       boost::bind(&ServerConnection::StartInLoop, shared_from_this()));
 }
@@ -77,16 +81,21 @@ void ServerConnection::SendReply(const MessagePtr& reply) {
   }
   if (!connection_->WriteBufferEmpty()) {
     EnableLoopWriteEvent();
+  } else {
+    if (close_connection_after_send_) {
+      CloseInLoop();
+      return;
+    }
   }
+  request_.reset();
   if (process_request_in_order_) {
     is_processing_ = false;
-    MessagePtr request;
-    int r = connection_->RetrieveMessage(request);
+    int r = connection_->RetrieveMessage(request_);
     if (r < 0) {
       OnException(Status(Status::kMessageDecodeError, "message decode error"));
     } else if (r > 0) {
       is_processing_ = true;
-      OnMessageReceived(request);
+      OnMessageReceived(request_);
     }
   }
 }
@@ -103,8 +112,7 @@ void ServerConnection::ProcessRead() {
   //some server should process requests from the same connection in order
   //in this case, just only decode one message
   while (!process_request_in_order_ || !is_processing_) {
-    MessagePtr request;
-    int r = connection_->RetrieveMessage(request);
+    int r = connection_->RetrieveMessage(request_);
     if (r < 0) {
       OnException(Status(Status::kMessageDecodeError, "message decode error"));
       return;
@@ -114,7 +122,7 @@ void ServerConnection::ProcessRead() {
       if (process_request_in_order_) {
         is_processing_ = true;
       }
-      OnMessageReceived(request);
+      OnMessageReceived(request_);
     }
   }
 }
@@ -125,7 +133,11 @@ void ServerConnection::ProcessWrite() {
     return;
   }
   if (connection_->WriteBufferEmpty()) {
-    DisableLoopWriteEvent();
+    if (close_connection_after_send_) {
+      CloseInLoop();
+    } else {
+      DisableLoopWriteEvent();
+    }
   }
 }
 

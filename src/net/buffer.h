@@ -6,6 +6,8 @@
 #ifndef SRC_NET_BUFFER_H_
 #define SRC_NET_BUFFER_H_
 
+#include <string>
+
 namespace kit {
 
 class Buffer {
@@ -21,6 +23,7 @@ class Buffer {
   char* PeekWrite();
   void MarkWrited(int len);
   void Write(const char* data, int len);
+  void Write(const std::string& data);
 
   void Shrink();
   void MakeRoomForWrite(int len);

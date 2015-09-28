@@ -13,7 +13,8 @@ Server::Server()
       acceptor_(),
       parser_(),
       message_proc_(),
-      process_message_in_order_(false),
+      process_message_in_order_(true),
+      close_connection_after_process_(false),
       thread_pool_(),
       proc_thread_num_(0),
       max_queue_requests_(0) {
@@ -24,10 +25,12 @@ Server::~Server() {
 
 void Server::Init(const MessageParserPtr& parser,
                   const MessageProcess& message_proc, int proc_thread_num,
-                  int max_queue_requests, bool process_request_in_order) {
+                  int max_queue_requests, bool process_request_in_order,
+                  bool close_connection_after_process) {
   parser_ = parser;
   message_proc_ = message_proc;
   process_message_in_order_ = process_request_in_order;
+  close_connection_after_process_ = close_connection_after_process;
   proc_thread_num_ = proc_thread_num;
   max_queue_requests_ = max_queue_requests;
 }
@@ -52,7 +55,7 @@ void Server::OnNewConnection(const ServerConnectionPtr& new_conn) {
       &loop_, parser_,
       boost::bind(&Server::OnMessageReceived, shared_from_this(), _1, _2),
       boost::bind(&Server::OnConnectionException, shared_from_this(), _1, _2),
-      process_message_in_order_);
+      process_message_in_order_, close_connection_after_process_);
 }
 
 void Server::OnMessageReceived(const MessagePtr& message,
