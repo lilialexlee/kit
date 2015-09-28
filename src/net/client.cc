@@ -28,6 +28,14 @@ Client::~Client() {
   }
 }
 
+void Client::Init(const MessageParserPtr& parser,
+                  const MessageReceivedCallback& message_cb,
+                  const ConnectionExceptionCallback& conn_exception_cb) {
+  parser_ = parser;
+  message_received_call_back_ = message_cb;
+  connection_exception_call_back_ = conn_exception_cb;
+}
+
 void Client::Connect(const std::string& ip, int port, int timeout_ms,
                      const ConnectCallback cb) {
   boost::mutex::scoped_lock lock(mutex_);
@@ -41,14 +49,6 @@ void Client::Connect(const std::string& ip, int port, int timeout_ms,
           boost::bind(&Client::OnConnectFinished, shared_from_this(), _1, _2)));
   state_ = kConnecting;
   connector_->Start();
-}
-
-void Client::Setup(const MessageParserPtr& parser,
-                   const MessageReceivedCallback& message_cb,
-                   const ConnectionExceptionCallback& conn_exception_cb) {
-  parser_ = parser;
-  message_received_call_back_ = message_cb;
-  connection_exception_call_back_ = conn_exception_cb;
 }
 
 void Client::Send(const MessagePtr& message) {
@@ -75,30 +75,34 @@ void Client::Close() {
 
 void Client::OnConnectFinished(const Status& status,
                                const ClientConnectionPtr& connection) {
-  boost::mutex::scoped_lock lock(mutex_);
-  if (status.Ok()) {
-    state_ = kConnected;
-    connection_ = connection;
-    connection_->Init(
-        loop_, parser_,
-        boost::bind(&Client::OnMessageReceived, shared_from_this(), _1),
-        boost::bind(&Client::OnConnectionException, shared_from_this(), _1));
-  } else {
-    state_ = kDisConnected;
+  {
+    boost::mutex::scoped_lock lock(mutex_);
+    if (status.Ok()) {
+      state_ = kConnected;
+      connection_ = connection;
+      connection_->Init(
+          loop_, parser_,
+          boost::bind(&Client::OnMessageReceived, shared_from_this(), _1),
+          boost::bind(&Client::OnConnectionException, shared_from_this(), _1));
+    } else {
+      state_ = kDisConnected;
+    }
+    connector_.reset();
   }
-  connector_.reset();
-  connect_call_back_(status);
+  connect_call_back_(status, shared_from_this());
 }
 
 void Client::OnMessageReceived(const MessagePtr& message) {
-  message_received_call_back_(message);
+  message_received_call_back_(message, shared_from_this());
 }
 
 void Client::OnConnectionException(const Status& status) {
-  boost::mutex::scoped_lock lock(mutex_);
-  state_ = kDisConnected;
-  connection_.reset();
-  connection_exception_call_back_(status);
+  {
+    boost::mutex::scoped_lock lock(mutex_);
+    state_ = kDisConnected;
+    connection_.reset();
+  }
+  connection_exception_call_back_(status, shared_from_this());
 }
 
 }

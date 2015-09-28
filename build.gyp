@@ -105,6 +105,40 @@
         '<(project_path)/example/echo/echo_server.cc',
       ],
     },
+    {
+      'target_name' : 'echo_client',
+      'type' : 'executable',
+      'include_dirs':[
+      ],
+      'link_settings': {
+        'libraries' : [
+        ]
+      },
+      'defines' : [],
+      'dependencies' : [
+         'kit',
+      ],
+      'sources' : [
+        '<(project_path)/example/echo/echo_client.cc',
+      ],
+    },
+    {
+      'target_name' : 'echo_bench_client',
+      'type' : 'executable',
+      'include_dirs':[
+      ],
+      'link_settings': {
+        'libraries' : [
+        ]
+      },
+      'defines' : [],
+      'dependencies' : [
+         'kit',
+      ],
+      'sources' : [
+        '<(project_path)/example/echo/echo_bench_client.cc',
+      ],
+    },
   ],
 }
 

@@ -14,7 +14,7 @@ namespace echo {
 
 class EchoMessage : public kit::Message {
  public:
-  EchoMessage(const std::string str)
+  explicit EchoMessage(const std::string str)
       : str_(str) {
   }
 
@@ -34,6 +34,10 @@ class EchoMessage : public kit::Message {
     output->Write(str_.c_str(), str_.size());
   }
 
+  std::string Str() {
+    return str_;
+  }
+ private:
   std::string str_;
 };
 

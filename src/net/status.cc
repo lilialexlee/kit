@@ -24,7 +24,7 @@ bool Status::Ok() const {
   return code_ == kOk;
 }
 
-const std::string& Status::GetInfo() const {
+const std::string& Status::Info() const {
   return message_;
 }
 

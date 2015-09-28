@@ -13,7 +13,7 @@ kit::MessagePtr Proc(const kit::MessagePtr& request) {
 int main(int argc, char* argv[]) {
   if (argc != 4) {
     printf("Usage: echo_server listen_port proc_thread_num queue_max\n");
-    printf("Like:  echo_server 22222 3 100\n");
+    printf("Like:  echo_server 22222 5 100\n");
     return 0;
   }
   int listen_port = atoi(argv[1]);

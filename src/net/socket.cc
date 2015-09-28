@@ -178,7 +178,7 @@ int Socket::Bind(const std::string& ip, int port) {
   struct ::sockaddr_in addr;
   memset(&addr, 0, sizeof(addr));
   addr.sin_family = AF_INET;
-  addr.sin_port = htons((short ) port);
+  addr.sin_port = htons((short) port);
   if (ip.empty()) {
     addr.sin_addr.s_addr = INADDR_ANY;
   } else {
@@ -236,7 +236,7 @@ int Socket::Connect(const std::string& ip, int port) {
   struct ::sockaddr_in addr;
   memset(&addr, 0, sizeof(addr));
   addr.sin_family = AF_INET;
-  addr.sin_port = htons((short ) port);
+  addr.sin_port = htons((short) port);
   inet_pton(AF_INET, ip.c_str(), &addr.sin_addr);
   if (::connect(sock_fd_, (struct sockaddr *) &addr, sizeof(addr)) == -1) {
     if (errno != EINPROGRESS) {

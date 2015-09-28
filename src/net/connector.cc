@@ -83,6 +83,7 @@ void Connector::ProcessError() {
 
 void Connector::StartInLoop() {
   socket_.reset(new Socket());
+  socket_->CreatSocketHandle();
   socket_->SetNonBlock(true);
   int r = socket_->Connect(ip_, port_);
   if (r < 0) {
@@ -121,8 +122,8 @@ void Connector::OnConnected() {
 void Connector::OnConnectTimeout() {
   if (is_connecting_) {
     StopInLoop();
+    OnConnectError(Status(Status::kConnectTimeout, "connect timeout"));
   }
-  OnConnectError(Status(Status::kConnectTimeout, "connect timeout"));
 }
 
 void Connector::OnConnectError(const Status& status) {

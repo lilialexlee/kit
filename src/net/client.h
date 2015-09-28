@@ -18,6 +18,7 @@
 namespace kit {
 
 class Client;
+
 typedef boost::shared_ptr<Client> ClientPtr;
 
 class Client : public boost::enable_shared_from_this<Client> {
@@ -28,19 +29,19 @@ class Client : public boost::enable_shared_from_this<Client> {
     kConnected
   };
 
-  typedef boost::function<void(const Status&)> ConnectCallback;
-  typedef boost::function<void(const MessagePtr&)> MessageReceivedCallback;
-  typedef boost::function<void(const Status&)> ConnectionExceptionCallback;
+  typedef boost::function<void(const Status&, const ClientPtr&)> ConnectCallback;
+  typedef boost::function<void(const MessagePtr&, const ClientPtr&)> MessageReceivedCallback;
+  typedef boost::function<void(const Status&, const ClientPtr&)> ConnectionExceptionCallback;
 
   Client(EventLoop* loop);
   ~Client();
 
+  void Init(const MessageParserPtr& parser,
+            const MessageReceivedCallback& message_cb,
+            const ConnectionExceptionCallback& conn_exception_cb);
+
   void Connect(const std::string& ip, int port, int timeout_ms,
                const ConnectCallback cb);
-
-  void Setup(const MessageParserPtr& parser,
-             const MessageReceivedCallback& message_cb,
-             const ConnectionExceptionCallback& conn_exception_cb);
 
   void Send(const MessagePtr& message);
 

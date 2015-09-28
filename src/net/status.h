@@ -28,7 +28,7 @@ class Status {
   ~Status();
 
   bool Ok() const;
-  const std::string& GetInfo() const;
+  const std::string& Info() const;
 
  private:
   Code code_;
